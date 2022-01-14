@@ -1,0 +1,40 @@
+version: '3.6'
+services:
+
+  db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: "pass"
+    ports:
+      - 3306
+    volumes:
+      - ./src/init.sql:/docker-entrypoint-initdb.d/init.sql
+ 
+
+  apache:
+    build: ./httpd
+    volumes:
+      - ./src:/var/www/html
+      - ./httpd/httpd.conf/apache2:/etc/apache2
+      - ./httpd/php.ini:/usr/local/etc/php/conf.d/php.ini
+    entrypoint: ["/bin/sh", "-c", "composer update && /usr/sbin/apache2ctl -D FOREGROUND"]
+    depends_on:
+      - db
+
+  
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - 80:80
+    volumes:
+      - ./src:/usr/share/nginx/html
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - apache
+
+
+  redis:
+    build: ./redis
+    ports:
+      - 6379:6379
